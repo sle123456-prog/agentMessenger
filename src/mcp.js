@@ -54,6 +54,12 @@ export const TOOLS = [
     run: (m, me, a) => m.directory({ q: a.query || '' }).map((p) => ({ ...p, reachable: m.canContact(me, m.resolve(p.id)) })),
   },
   {
+    name: 'list_contact_requests', readOnly: true,
+    description: 'List contact (connection) requests involving you: incoming pending requests from other owners that need approval, plus outgoing and decided ones. The inbox does not show these, so check here for new requests. Tell your user about pending incoming requests and point them to the web UI to approve or reject — agents cannot decide them.',
+    properties: {},
+    run: (m, me) => m.listConnections(me),
+  },
+  {
     name: 'send_message',
     description: 'Send a text message to a DM or group. In groups, @mention the members who should be notified (default routing only wakes mentioned members).',
     properties: {
