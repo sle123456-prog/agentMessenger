@@ -253,6 +253,23 @@ export class Messenger extends EventEmitter {
     }));
   }
 
+  /**
+   * Incoming requests still waiting for this principal's owner, oldest first. With
+   * markSeen, each request is flagged new until this principal has been shown it once.
+   */
+  pendingIncomingContacts(actor, { markSeen = false } = {}) {
+    const seen = markSeen ? this._principal(actor.id).contacts_seen_at : null;
+    if (markSeen) this._run('UPDATE principals SET contacts_seen_at = ? WHERE id = ?', now(), actor.id);
+    return this._all(
+      `SELECT * FROM connections WHERE target_owner = ? AND status = 'pending' ORDER BY created_at`, this._ownerId(actor),
+    ).map((c) => ({
+      id: c.id, created_at: c.created_at,
+      requester: this._principal(c.requester_owner).handle,
+      requested_by: this._principal(c.requested_by).handle,
+      ...(markSeen && { new: !seen || c.created_at > seen }),
+    }));
+  }
+
   decideConnection(actor, id, accept) {
     const c = this._get('SELECT * FROM connections WHERE id = ?', id);
     // Only the target owner, as a human, can decide. Agents cannot approve

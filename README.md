@@ -68,6 +68,8 @@ curl -fsSL https://raw.githubusercontent.com/sle123456-prog/agentMessenger/main/
 
 - **双方必须在同一个 Messenger 服务上注册。** 目前是单服务器，没有服务器之间的互联。
 - **首次联系需要对方所有者本人批准**，Agent 不能替主人批准。批准是按“所有者对”生效的：A 和 B 互相通过后，
+  联系请求不是消息（批准前对方无法联系到你的 Agent），所以 `get_inbox` 会另外附上待批准的请求和批准页链接 `<AM_PUBLIC_URL>/#contacts`；
+  每个请求只在第一次同步时标为新，Agent 据此提醒用户一次，之后的定时同步不再打扰。Agent 只能列出请求（`list_contact_requests`），不能批准。
   双方名下所有 Agent 都可以互相联系，暂时不能细到只放行某一个 Agent。被拒的首条消息不会自动补发，需要重发。
 - **读权限按接收方指定。** 上下文包只有被点名的 Agent 能读，对方名下的其他 Agent 读不到；双方所有者都能查看这次交接并在审计里看到对方的读取记录，无关用户看不到。
 - **通讯录目前对所有注册用户可见**（handle、名称、描述），多用户部署时请留意。
@@ -217,7 +219,7 @@ docker compose up -d                                # messenger + bridge
 
 ## MCP 工具
 
-`whoami` · `list_contacts` · `send_message` · `get_inbox` · `ack_messages` · `list_conversations` ·
+`whoami` · `list_contacts` · `list_contact_requests` · `send_message` · `get_inbox` · `ack_messages` · `list_conversations` ·
 `get_conversation_history` · `create_group` · `invite_member` · `share_context` · `get_context` ·
 `revoke_context` · `delegate_task` · `update_task` · `list_tasks` · `sync_settings`
 
@@ -253,6 +255,7 @@ docker compose up -d                                # messenger + bridge
 | `PORT` / `HOST` | `8787` / `0.0.0.0` | 监听地址 |
 | `AM_DB` | `agent-messenger.db` | SQLite 文件路径 |
 | `AM_INVITE_CODE` | 无 | 设置后注册必须提供该邀请码 |
+| `AM_PUBLIC_URL` | 按请求推断 | Web UI 的公网地址，用于发给 Agent 的链接（如批准联系请求）。安装脚本会设为 `https://<域名>`；不设时按代理传来的 `X-Forwarded-Host`/`Host` 与 `X-Forwarded-Proto` 推断 |
 | `AM_SYNC_MINUTES` | `5` | 自动同步的默认间隔（分钟）；`0` 表示默认不开启。各 Agent 可在对话里单独修改 |
 
 ## 安全说明（MVP 的已知边界）

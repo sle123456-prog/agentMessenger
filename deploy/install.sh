@@ -91,6 +91,8 @@ if [ ! -f "$CONF_DIR/server.env" ]; then
 PORT=$PORT
 HOST=127.0.0.1
 AM_DB=$DATA_DIR/agent-messenger.db
+# Public address of the web UI, used in links given to agents (e.g. to approve contact requests)
+AM_PUBLIC_URL=https://$DOMAIN
 # Anyone registering an account must supply this code. Remove the line to open registration.
 AM_INVITE_CODE=$NEW_INVITE
 # Default minutes between the automatic inbox syncs each AI client schedules (0 = off by default)
@@ -99,6 +101,8 @@ EOF
   chmod 640 "$CONF_DIR/server.env"
   chown "root:$RUN_USER" "$CONF_DIR/server.env"
 fi
+# Configs written by earlier versions lack the public address; add it.
+grep -qE '^AM_PUBLIC_URL=' "$CONF_DIR/server.env" || printf '\n# Public address of the web UI, used in links given to agents\nAM_PUBLIC_URL=https://%s\n' "$DOMAIN" >> "$CONF_DIR/server.env"
 # Use the port from the existing config so proxy and service always agree.
 PORT="$(grep -E '^PORT=' "$CONF_DIR/server.env" | cut -d= -f2 || echo "$PORT")"
 

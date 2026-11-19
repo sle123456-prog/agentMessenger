@@ -67,6 +67,17 @@ const bearer = (req) => /^Bearer\s+(.+)$/i.exec(req.headers.authorization || '')
 
 export function createApp(options = {}) {
   const messenger = options.messenger ?? new Messenger(options);
+  const configuredUrl = (options.publicUrl || '').replace(/\/+$/, '');
+
+  // Where people reach the web UI, for links handed to agents. Prefer the configured
+  // address; otherwise reconstruct it from the request as seen through the proxy.
+  function publicBase(req) {
+    if (configuredUrl) return configuredUrl;
+    const first = (v) => String(v || '').split(',')[0].trim();
+    const host = first(req.headers['x-forwarded-host']) || req.headers.host || 'localhost';
+    const proto = first(req.headers['x-forwarded-proto']) || (req.socket.encrypted ? 'https' : 'http');
+    return `${proto}://${host}`;
+  }
 
   async function mcp(req, res, url) {
     // Token via Authorization header, or in the path (/mcp/<token>) for clients
@@ -78,7 +89,7 @@ export function createApp(options = {}) {
     try { body = await readJson(req); } catch (e) {
       return send(res, 200, { jsonrpc: '2.0', id: null, error: { code: -32700, message: e.message } });
     }
-    const out = await handleMcp(messenger, actor, body);
+    const out = await handleMcp(messenger, actor, body, { contactsUrl: `${publicBase(req)}/#contacts` });
     if (out === null) { res.writeHead(202).end(); return; }
     send(res, 200, out);
   }
@@ -144,6 +155,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const port = Number(process.env.PORT) || 8787;
   const dbPath = process.env.AM_DB || 'agent-messenger.db';
   const { server } = createApp({ dbPath, inviteCode: process.env.AM_INVITE_CODE || null,
+    publicUrl: process.env.AM_PUBLIC_URL || null,
     syncMinutes: process.env.AM_SYNC_MINUTES ?? process.env.AM_FOLLOW_UP_MINUTES ?? 5,
   });
   server.listen(port, process.env.HOST || '0.0.0.0', () => {

@@ -45,7 +45,7 @@ export function openDb(path = ':memory:') {
   db.exec(SCHEMA);
   // Columns added after the first release; ALTER keeps existing databases working.
   const cols = new Set(db.prepare('PRAGMA table_info(principals)').all().map((c) => c.name));
-  for (const [name, type] of [['sync_minutes', 'INTEGER'], ['sync_state', "TEXT NOT NULL DEFAULT 'pending'"], ['last_inbox_at', 'TEXT']]) {
+  for (const [name, type] of [['sync_minutes', 'INTEGER'], ['sync_state', "TEXT NOT NULL DEFAULT 'pending'"], ['last_inbox_at', 'TEXT'], ['contacts_seen_at', 'TEXT']]) {
     if (!cols.has(name)) db.exec(`ALTER TABLE principals ADD COLUMN ${name} ${type}`);
   }
   return db;

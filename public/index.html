@@ -414,6 +414,11 @@ function paneAudit() {
 }
 
 // ---------- boot ----------
+// /#contacts (the link agents give for approving contact requests) opens the contacts tab.
+const TABS = ['agents', 'contacts', 'tasks', 'audit'];
+const tabFromHash = () => { const t = location.hash.slice(1); if (TABS.includes(t)) S.tab = t; };
+tabFromHash();
+window.addEventListener('hashchange', () => { tabFromHash(); if (S.me) refresh().catch(() => {}); });
 if (S.token) login(S.token).catch(() => {}); else renderAuth();
 </script>
 </body>
